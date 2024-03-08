@@ -25,8 +25,11 @@ process RUN_ALPHAFOLD2 {
     path ('uniprot/*')
 
     output:
-    path ("${fasta.baseName}*")
-    path "*_mqc.tsv", emit: multiqc
+    // path ("${fasta.baseName}*")
+    // path "*_mqc.tsv", emit: multiqc
+    tuple val(meta), path("**/*.json"), emit: json
+    tuple val(meta), path("**/*.pkl"), emit: pkl
+    tuple val(meta), path("**/*.pdb"), emit: pdb
     path "versions.yml", emit: versions
 
     when:
@@ -59,17 +62,6 @@ process RUN_ALPHAFOLD2 {
         --obsolete_pdbs_path=./pdb_mmcif/obsolete.dat \
         --random_seed=53343 \
         $args
-
-    cp "${fasta.baseName}"/ranked_0.pdb ./"${fasta.baseName}".alphafold.pdb
-    cd "${fasta.baseName}"
-    awk '{print \$6"\\t"\$11}' ranked_0.pdb | uniq > ranked_0_plddt.tsv
-    for i in 1 2 3 4
-        do awk '{print \$6"\\t"\$11}' ranked_\$i.pdb | uniq | awk '{print \$2}' > ranked_"\$i"_plddt.tsv
-    done
-    paste ranked_0_plddt.tsv ranked_1_plddt.tsv ranked_2_plddt.tsv ranked_3_plddt.tsv ranked_4_plddt.tsv > plddt.tsv
-    echo -e Positions"\\t"rank_0"\\t"rank_1"\\t"rank_2"\\t"rank_3"\\t"rank_4 > header.tsv
-    cat header.tsv plddt.tsv > ../"${fasta.baseName}"_plddt_mqc.tsv
-    cd ..
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
